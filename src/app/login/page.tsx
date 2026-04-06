@@ -81,7 +81,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg border-zinc-200 dark:border-zinc-800 bg-white/50 backdrop-blur-sm dark:bg-zinc-900/50">
         <CardHeader className="space-y-4 pt-8">
           <div className="flex justify-center">
-            <img src="/logo.png" alt="Logo" className="h-14 w-14 rounded-2xl object-cover shadow-md bg-zinc-900 ring-2 ring-zinc-100 dark:ring-zinc-800" />
+            <img src="/logo.svg" alt="Logo" className="h-14 w-14 rounded-2xl object-cover shadow-md dark:invert" />
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight text-center">
             Welcome back

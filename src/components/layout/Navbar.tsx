@@ -20,7 +20,7 @@ export function Navbar() {
     <div className="border-b bg-white dark:bg-zinc-950 sticky top-0 z-50">
       <div className="container flex h-16 items-center px-4 md:px-8 mx-auto">
         <Link href="/dashboard" className="flex items-center gap-2 mr-8 hover:opacity-80 transition-opacity">
-          <img src="/logo.png" alt="Logo" className="h-8 w-8 rounded-lg object-cover shadow-sm bg-zinc-900 border-none outline-none ring-1 ring-zinc-800" />
+          <img src="/logo.svg" alt="Logo" className="h-8 w-8 rounded-lg object-cover shadow-sm dark:invert" />
           <span className="font-bold text-lg tracking-tight hidden sm:inline-block bg-gradient-to-r from-zinc-900 to-zinc-600 bg-clip-text text-transparent dark:from-zinc-100 dark:to-zinc-400">
             ExpenseTracker
           </span>

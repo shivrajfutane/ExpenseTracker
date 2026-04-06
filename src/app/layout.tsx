@@ -12,6 +12,9 @@ const inter = InterFont({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "ExpenseTracker | Smart Financial Management",
   description: "Track your expenses with ease and precision using our premium dashboard.",
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 import { ThemeProvider } from "@/components/theme-provider";

@@ -39,7 +39,7 @@ export function JoinGroupClient({ groupId }: { groupId: string }) {
    return (
         <div className="flex flex-col items-center justify-center py-20 text-center max-w-sm mx-auto animate-in fade-in zoom-in duration-500">
             <div className="relative mb-8">
-                <img src="/logo.png" alt="Logo" className="relative h-20 w-20 rounded-2xl object-cover shadow-xl bg-zinc-900 ring-4 ring-white dark:ring-zinc-950 mx-auto" />
+                <img src="/logo.svg" alt="Logo" className="relative h-20 w-20 rounded-2xl object-cover shadow-xl dark:invert mx-auto" />
             </div>
             <h2 className="text-3xl font-bold tracking-tight mb-3">
                 You've been invited!

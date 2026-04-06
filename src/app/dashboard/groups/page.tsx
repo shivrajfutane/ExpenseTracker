@@ -44,8 +44,7 @@ export default async function GroupsPage() {
         <Card className="border-dashed shadow-sm bg-zinc-50/50 dark:bg-zinc-900/50">
           <CardContent className="flex flex-col items-center justify-center p-16 text-center">
             <div className="relative mb-6">
-                <div className="absolute -inset-1 bg-gradient-to-r from-zinc-900 to-zinc-600 rounded-2xl blur opacity-25 dark:from-zinc-100 dark:to-zinc-400"></div>
-                <img src="/logo.png" alt="Logo" className="relative h-16 w-16 rounded-2xl object-cover shadow-lg bg-zinc-900 ring-2 ring-white dark:ring-zinc-950 mx-auto" />
+                <img src="/logo.svg" alt="Logo" className="relative h-16 w-16 rounded-2xl object-cover shadow-lg dark:invert mx-auto" />
             </div>
             <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 italic">Financial teamwork starts here.</h3>
             <p className="text-sm text-zinc-500 max-w-sm mt-3 mb-8">
