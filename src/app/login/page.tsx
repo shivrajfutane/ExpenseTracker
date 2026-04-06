@@ -10,6 +10,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/comp
 import { Label } from '@/components/ui/label'
 import { Globe, Loader2, Mail } from 'lucide-react'
 import { toast } from 'sonner'
+import { ThemeToggle } from '@/components/layout/ThemeToggle'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -77,7 +78,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 relative overflow-hidden">
+      <div className="absolute top-8 right-8 z-50">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md shadow-lg border-zinc-200 dark:border-zinc-800 bg-white/50 backdrop-blur-sm dark:bg-zinc-900/50">
         <CardHeader className="space-y-4 pt-8">
           <div className="flex justify-center">
