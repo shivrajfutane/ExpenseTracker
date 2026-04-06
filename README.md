@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🪙 ExpenseTracker | Smart Financial Management
 
-## Getting Started
+![Logo](public/logo.png)
 
-First, run the development server:
+A modern, high-performance **Expense Management & Bill Splitting** platform built with Next.js 16 and Supabase. Designed for speed, security, and a premium user experience.
 
+---
+
+## 🚀 Features
+
+### 📊 Personal Finance
+- **Real-time Analytics**: Track your spending categories and monthly trends with beautiful interactive charts.
+- **Transaction History**: Seamlessly manage and categorize your personal expenses.
+
+### 👥 Group Expenses & Bill Splitting
+- **Dynamic Groups**: Create shared spaces for trips, roommates, or dinner bills.
+- **Smart Settlements**: Automatically calculates "Who owes Whom" based on shared ledger math.
+- **Invite Flow**: Invite friends via secure email OTP or shareable invite links.
+- **Real-time Balances**: Instantly see your net position (You Owe / You are Owed) within each group.
+
+### 🛡️ Security & Privacy
+- **Supabase Auth**: Secure Google OAuth and Magic Link (OTP) authentication.
+- **Row Level Security (RLS)**: Your financial data is strictly yours. Advanced database policies ensure only members can see group ledgers.
+- **Encrypted Communication**: All transactions and invites are handled over secure protocols.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: [Next.js 16](https://nextjs.org/) (App Router, Turbopack)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/)
+- **Database**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **Auth**: Supabase Auth (Google & Magic Link)
+- **Icons**: Lucide React
+- **Dates**: date-fns
+
+---
+
+## 🏁 Getting Started
+
+### 1. Clone & Install
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/YOUR_USERNAME/expense-tracker.git
+cd expense-tracker
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Variables
+Create a `.env.local` file with your credentials:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Database Setup
+1. Go to your **Supabase SQL Editor**.
+2. Run the migration scripts located in [supabase_setup.sql](file:///C:/Users/geeta/.gemini/antigravity/brain/5f938c03-d565-4cf3-999c-6e2b1dcffdfc/supabase_setup.md) and [profiles.sql](file:///C:/Users/geeta/.gemini/antigravity/brain/5f938c03-d565-4cf3-999c-6e2b1dcffdfc/profiles.sql).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Run Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) for the premium experience!
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📂 Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+├── src/
+│   ├── app/            # App Router & API routes
+│   ├── components/     # UI Components (Shadcn + Custom)
+│   ├── lib/            # Supabase config & Utilities
+│   └── types/          # TypeScript definitions
+├── public/             # Static assets & Brand Logo
+└── .env.local          # Private credentials (Ignored)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 📄 License
+This project is licensed under the MIT License.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+*Designed with ❤️ for modern financial freedom.*
