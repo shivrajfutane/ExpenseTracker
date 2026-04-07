@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { MoreHorizontal, Pencil, Trash2, AlertCircle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase-client'
+import { logActivity } from '@/lib/activity-logger'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
@@ -50,12 +51,27 @@ export function SplitExpenseActions({
   const handleDelete = async () => {
     setDeleting(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
       // 1. Delete splits first (or let CASCADE handle it, but let's be explicit)
       await supabase.from('expense_splits').delete().eq('split_expense_id', expense.id)
       // 2. Delete the master record
       const { error } = await supabase.from('split_expenses').delete().eq('id', expense.id)
       
       if (error) throw error
+
+      // 3. Log Activity
+      await logActivity({
+          userId: user.id,
+          action: 'expense_deleted',
+          groupId,
+          expenseId: expense.id,
+          metadata: {
+              before: { title: expense.title, amount: expense.total_amount, splits: expense.splits }
+          }
+      })
+
       toast.success('Split expense deleted')
       setShowDelete(false)
       router.refresh()
@@ -86,7 +102,7 @@ export function SplitExpenseActions({
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
-            variant="destructive"
+            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
             onClick={() => setShowDelete(true)}
           >
             <Trash2 className="mr-2 h-4 w-4" />
@@ -104,24 +120,27 @@ export function SplitExpenseActions({
       />
 
       <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent>
+        <AlertDialogContent className="shadow-2xl border-zinc-200 dark:border-zinc-800">
           <AlertDialogHeader>
-            <div className="flex items-center gap-2 text-red-500">
-                <AlertCircle className="h-5 w-5" />
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <div className="flex items-center gap-3 text-red-600 mb-2">
+                <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <Trash2 className="h-5 w-5" />
+                </div>
+                <AlertDialogTitle className="text-xl">Confirm Delete</AlertDialogTitle>
             </div>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the expense and automatically remove its exact splits from everyone's balance.
+            <AlertDialogDescription className="text-zinc-500">
+              This will permanently remove <strong>"{expense.title}"</strong> and all its associated splits. 
+              Balances will be adjusted for all members immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl border-zinc-200 dark:border-zinc-800 font-bold">Nevermind</AlertDialogCancel>
             <AlertDialogAction 
                 onClick={handleDelete}
                 disabled={deleting}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-6 shadow-lg shadow-red-500/20"
             >
-                {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Confirm Delete'}
+                {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete Permanently'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

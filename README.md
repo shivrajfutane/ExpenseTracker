@@ -64,6 +64,25 @@ Open [http://localhost:3000](http://localhost:3000) for the premium experience!
 
 ---
 
+## 🚀 Deployment & Auth Configuration
+
+If you're deploying to **Vercel** or **GitHub**, you **MUST** update your Supabase settings to prevent redirects to `localhost:3000`.
+
+### 1. Update Supabase URL Configuration
+1. Go to your **Supabase Dashboard** -> **Authentication** -> **URL Configuration**.
+2. **Site URL**: This is your production URL (e.g., `https://your-app.vercel.app`).
+3. **Redirect URLs**: Add the following:
+   - `http://localhost:3000/**` (for development)
+   - `https://your-app.vercel.app/**` (for production)
+   - `https://your-app.vercel.app/auth/callback` (explicit callback)
+
+### 2. Environment Variables (Production)
+Ensure your Vercel (or other host) has these environment variables:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+---
+
 ## 📂 Project Structure
 
 ```text

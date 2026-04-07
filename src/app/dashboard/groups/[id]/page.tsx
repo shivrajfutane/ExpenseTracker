@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, PlusCircle, Users, Settings } from 'lucide-react'
+import { ArrowLeft, PlusCircle, Users, Settings, Download, Receipt, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { InviteMembersDialog } from '@/components/groups/InviteMembersDialog'
@@ -9,6 +9,8 @@ import { SplitExpenseDialog } from '@/components/groups/SplitExpenseDialog'
 import { SplitExpenseActions } from '@/components/groups/SplitExpenseActions'
 import { SettleUpDialog } from '@/components/groups/SettleUpDialog'
 import { GroupSettingsDialog } from '@/components/groups/GroupSettingsDialog'
+import { ActivityFeed } from '@/components/groups/ActivityFeed'
+import { NotificationManager } from '@/components/groups/NotificationManager'
 import { format } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
@@ -42,7 +44,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     .eq('id', user.id)
     .single()
 
-  const currency = profile?.currency || '$'
+  const currency = profile?.currency || '₹'
 
   // 2. Fetch Group Members with Profiles
   const { data: members } = await supabase
@@ -65,6 +67,7 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     .from('settlements')
     .select('*')
     .eq('group_id', id)
+  
   // 4. Calculate Group Balances
   let youPaidTotal = 0
   let yourShareTotal = 0
@@ -83,16 +86,13 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
   // 4b. Settlement logic
   settlements?.forEach((settlement: any) => {
     if (settlement.paid_by === user.id) {
-       // You paid someone, reducing your debt
        youPaidTotal += Number(settlement.amount)
     }
     if (settlement.paid_to === user.id) {
-       // Someone paid you, meaning you are owed less
        yourShareTotal += Number(settlement.amount)
     }
   })
 
-  // MVP Settlement Math (will integrate actual settlements table later)
   const netBalance = youPaidTotal - yourShareTotal
   const youAreOwed = netBalance > 0 ? netBalance : 0
   const youOwe = netBalance < 0 ? Math.abs(netBalance) : 0
@@ -107,6 +107,8 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         </Link>
         <span className="text-sm text-zinc-500 font-medium">Back to Groups</span>
       </div>
+
+      <NotificationManager groupId={id} currentUserId={user.id} />
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -126,6 +128,34 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           <InviteMembersDialog groupId={id} />
           <SplitExpenseDialog groupId={id} members={members || []} />
         </div>
+      </div>
+
+      {/* CSV Export Button (Utility) */}
+      <div className="flex justify-end -mt-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-900 group"
+            onClick={async () => {
+                'use client';
+                const header = "Date,Title,Amount,Paid By\n";
+                const rows = (splitExpenses || []).map((exp: any) => 
+                    `${format(new Date(exp.date), 'yyyy-MM-dd')},${exp.title.replace(/,/g, '')},${exp.total_amount},${exp.paid_by}`
+                ).join("\n");
+                const blob = new Blob([header + rows], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('hidden', '');
+                a.setAttribute('href', url);
+                a.setAttribute('download', `expenses-${group.name}.csv`);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }}
+          >
+              <Download className="mr-2 h-3 w-3 transition-transform group-hover:-translate-y-0.5" />
+              Download History (CSV)
+          </Button>
       </div>
 
       {/* Balances Section MVP */}
@@ -168,14 +198,19 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
       ) : (
         <div className="space-y-4">
           {splitExpenses.map((expense: any) => (
-            <Card key={expense.id} className="shadow-sm">
+            <Card key={expense.id} className="shadow-sm border-zinc-200 dark:border-zinc-800 hover:shadow-md transition-shadow">
                 <CardHeader className="py-4 flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="text-base">{expense.title}</CardTitle>
-                        <CardDescription>{format(new Date(expense.date), 'MMM dd, yyyy')}</CardDescription>
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                            <Receipt className="h-5 w-5 text-zinc-500" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-base font-bold">{expense.title}</CardTitle>
+                            <CardDescription className="text-xs">{format(new Date(expense.date), 'MMM dd, yyyy')}</CardDescription>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="font-semibold text-lg">
+                        <div className="font-mono font-bold text-lg">
                             {currency}{Number(expense.total_amount).toFixed(2)}
                         </div>
                         <SplitExpenseActions 
@@ -190,6 +225,13 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
           ))}
         </div>
       )}
+
+      {/* Activity Feed Section */}
+      <h2 className="text-xl font-bold mt-12 mb-4 flex items-center gap-2 uppercase tracking-tight">
+          <Clock className="h-5 w-5 text-zinc-400" />
+          Recent Activity
+      </h2>
+      <ActivityFeed groupId={id} currentUserId={user.id} />
     </div>
   )
 }

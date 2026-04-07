@@ -57,6 +57,13 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   const url = request.nextUrl.clone()
+  const code = url.searchParams.get('code')
+
+  if (code && !url.pathname.startsWith('/auth/callback')) {
+    const callbackRedirectUrl = new URL('/auth/callback', request.url)
+    callbackRedirectUrl.searchParams.set('code', code)
+    return NextResponse.redirect(callbackRedirectUrl)
+  }
 
   // Protect /dashboard routes
   if (url.pathname.startsWith('/dashboard')) {
