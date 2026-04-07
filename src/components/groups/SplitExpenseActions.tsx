@@ -54,36 +54,54 @@ export function SplitExpenseActions({
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // 1. Delete splits first (or let CASCADE handle it, but let's be explicit)
-      await supabase.from('expense_splits').delete().eq('split_expense_id', expense.id)
-      // 2. Delete the master record
-      const { error } = await supabase.from('split_expenses').delete().eq('id', expense.id)
-      
-      if (error) throw error
-
-      // 3. Log Activity
+      // 1. Log Activity BEFORE Deleting (to avoid FK violation in log table)
       await logActivity({
           userId: user.id,
           action: 'expense_deleted',
           groupId,
           expenseId: expense.id,
           metadata: {
-              before: { title: expense.title, amount: expense.total_amount, splits: expense.splits }
+              before: { 
+                  title: expense.title, 
+                  amount: expense.total_amount,
+                  splits: expense.splits 
+              }
           }
       })
 
+      // 2. Delete splits first
+      const { error: splitError } = await supabase
+        .from('expense_splits')
+        .delete()
+        .eq('split_expense_id', expense.id)
+      
+      if (splitError) throw splitError
+
+      // 3. Delete the master record
+      const { error: mainError } = await supabase
+        .from('split_expenses')
+        .delete()
+        .eq('id', expense.id)
+      
+      if (mainError) throw mainError
+
       toast.success('Split expense deleted')
       setShowDelete(false)
+      
+      // Force a refresh of the page
       router.refresh()
+      // Fallback for some server component caching issues
+      setTimeout(() => window.location.reload(), 500)
     } catch (e: any) {
-      toast.error('Failed to delete expense')
+      console.error('Delete error:', e)
+      toast.error(e.message || 'Failed to delete expense')
     } finally {
       setDeleting(false)
     }
   }
 
   return (
-    <div onClick={(e) => e.preventDefault()}>
+    <div>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -134,14 +152,14 @@ export function SplitExpenseActions({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel className="rounded-xl border-zinc-200 dark:border-zinc-800 font-bold">Nevermind</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel className="rounded-xl border-zinc-200 dark:border-zinc-800 font-bold" disabled={deleting}>Nevermind</AlertDialogCancel>
+            <Button 
                 onClick={handleDelete}
                 disabled={deleting}
                 className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-6 shadow-lg shadow-red-500/20"
             >
                 {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete Permanently'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

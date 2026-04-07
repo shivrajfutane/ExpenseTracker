@@ -45,22 +45,31 @@ export function ActivityFeed({ groupId, currentUserId }: ActivityFeedProps) {
   const supabase = createClient()
 
   const fetchLogs = async () => {
-    let query = supabase
-      .from('activity_logs')
-      .select(`
-        *,
-        profile:profiles(*)
-      `)
-      .eq('group_id', groupId)
-      .order('created_at', { ascending: false })
+    try {
+        let query = supabase
+          .from('activity_logs')
+          .select(`
+            *,
+            profile:profiles(*)
+          `)
+          .eq('group_id', groupId)
+          .order('created_at', { ascending: false })
 
-    if (filter === 'added') query = query.ilike('action', '%created%')
-    if (filter === 'edited') query = query.ilike('action', '%edited%')
-    if (filter === 'deleted') query = query.ilike('action', '%deleted%')
+        if (filter === 'added') query = query.ilike('action', '%created%')
+        if (filter === 'edited') query = query.ilike('action', '%edited%')
+        if (filter === 'deleted') query = query.ilike('action', '%deleted%')
 
-    const { data, error } = await query
-    if (data) setLogs(data)
-    setLoading(false)
+        const { data, error } = await query
+        
+        if (error) {
+            console.error('Fetch logs error:', error)
+            toast.error('Failed to load recent activity')
+        }
+        
+        if (data) setLogs(data)
+    } finally {
+        setLoading(false)
+    }
   }
 
   useEffect(() => {
