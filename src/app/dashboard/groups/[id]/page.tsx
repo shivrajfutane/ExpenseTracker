@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, PlusCircle, Users, Settings, Download, Receipt, Clock, AlertCircle } from 'lucide-react'
+import { ArrowLeft, PlusCircle, Users, Settings, Receipt, Clock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { InviteMembersDialog } from '@/components/groups/InviteMembersDialog'
@@ -11,6 +11,7 @@ import { SettleUpDialog } from '@/components/groups/SettleUpDialog'
 import { GroupSettingsDialog } from '@/components/groups/GroupSettingsDialog'
 import { ActivityFeed } from '@/components/groups/ActivityFeed'
 import { NotificationManager } from '@/components/groups/NotificationManager'
+import { CSVExportButton } from '@/components/groups/CSVExportButton'
 import { format } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
@@ -140,30 +141,10 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
 
         {/* CSV Export Button (Utility) */}
         <div className="flex justify-end -mt-4">
-            <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 hover:text-zinc-900 group"
-                onClick={async () => {
-                    'use client';
-                    const header = "Date,Title,Amount,Paid By\n";
-                    const rows = (splitExpenses || []).map((exp: any) => 
-                        `${format(new Date(exp.date), 'yyyy-MM-dd')},${exp.title.replace(/,/g, '')},${exp.total_amount},${exp.paid_by}`
-                    ).join("\n");
-                    const blob = new Blob([header + rows], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.setAttribute('hidden', '');
-                    a.setAttribute('href', url);
-                    a.setAttribute('download', `expenses-${group.name}.csv`);
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }}
-            >
-                <Download className="mr-2 h-3 w-3 transition-transform group-hover:-translate-y-0.5" />
-                Download History (CSV)
-            </Button>
+            <CSVExportButton 
+                groupName={group.name} 
+                splitExpenses={splitExpenses || []} 
+            />
         </div>
 
         {/* Balances Section MVP */}
