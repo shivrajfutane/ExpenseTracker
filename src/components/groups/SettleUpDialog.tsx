@@ -22,10 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, DollarSign, Handshake } from 'lucide-react'
+import { Loader2, DollarSign, Handshake, Info, ArrowUpRight } from 'lucide-react'
 import { toast } from 'sonner'
+import { logActivity } from '@/lib/activity-logger'
 
-export function SettleUpDialog({ groupId, currentUserId, members }: { groupId: string, currentUserId: string, members: any[] }) {
+interface SettleUpDialogProps {
+  groupId: string;
+  currentUserId: string;
+  members: any[];
+  balances: Record<string, number>;
+  currency: string;
+}
+
+export function SettleUpDialog({ groupId, currentUserId, members, balances, currency }: SettleUpDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [amount, setAmount] = useState('')
@@ -54,8 +63,21 @@ export function SettleUpDialog({ groupId, currentUserId, members }: { groupId: s
             paid_to: paidTo,
             amount: settleAmount
         }])
+        .select().single()
 
       if (error) throw error
+
+      // Log the settlement
+      await logActivity({
+          userId: currentUserId,
+          action: 'settlement_added',
+          groupId,
+          metadata: {
+              amount: settleAmount,
+              paid_to: paidTo,
+              paid_by: currentUserId
+          }
+      })
 
       toast.success('Payment recorded successfully!')
       setAmount('')
@@ -95,21 +117,49 @@ export function SettleUpDialog({ groupId, currentUserId, members }: { groupId: s
               </SelectTrigger>
               <SelectContent>
                 {availableMembers.length === 0 ? (
-                    <SelectItem value="none" disabled>No other active members found</SelectItem>
+                    <SelectItem value="none" disabled>No other members to pay</SelectItem>
                 ) : (
-                    availableMembers.map(m => (
-                        <SelectItem key={m.id} value={m.user_id}>
-                            {m.profile?.full_name || m.profile?.email || `Member: ${m.user_id.substring(0,6)}...`}
-                        </SelectItem>
-                    ))
+                    availableMembers.map(m => {
+                        const name = m.profile?.full_name || m.profile?.email || 'Unknown Member'
+                        const email = m.profile?.email ? ` (${m.profile.email})` : ''
+                        return (
+                            <SelectItem key={m.user_id} value={m.user_id}>
+                                {name}{name !== m.profile?.email ? email : ''}
+                            </SelectItem>
+                        )
+                    })
                 )}
               </SelectContent>
             </Select>
           </div>
+          {paidTo && balances[paidTo] !== undefined && (
+            <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-zinc-400" />
+                    <span className="text-sm">
+                        {balances[paidTo] < 0 
+                            ? `You owe them ${currency}${Math.abs(balances[paidTo]).toFixed(2)}` 
+                            : `They owe you ${currency}${balances[paidTo].toFixed(2)}`}
+                    </span>
+                </div>
+                {balances[paidTo] < 0 && (
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400"
+                        onClick={() => setAmount(Math.abs(balances[paidTo]).toFixed(2))}
+                    >
+                        Settle All
+                    </Button>
+                )}
+            </div>
+          )}
+
           <div className="grid gap-2">
             <Label htmlFor="amount">Amount Paid</Label>
             <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                <span className="absolute left-3 top-3 text-zinc-500 font-bold">{currency}</span>
                 <Input 
                   id="amount" 
                   type="number"
@@ -118,7 +168,7 @@ export function SettleUpDialog({ groupId, currentUserId, members }: { groupId: s
                   value={amount} 
                   onChange={(e) => setAmount(e.target.value)} 
                   placeholder="0.00" 
-                  className="pl-9"
+                  className="pl-8"
                   required 
                   disabled={loading} 
                 />

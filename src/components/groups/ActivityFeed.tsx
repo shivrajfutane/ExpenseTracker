@@ -14,7 +14,8 @@ import {
   Filter,
   Undo2,
   ChevronRight,
-  Receipt
+  Receipt,
+  Handshake
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -143,6 +144,7 @@ export function ActivityFeed({ groupId, currentUserId }: ActivityFeedProps) {
       case 'member_added': return <UserPlus className="h-4 w-4 text-indigo-500" />
       case 'member_removed': return <UserMinus className="h-4 w-4 text-amber-500" />
       case 'split_updated': return <RefreshCcw className="h-4 w-4 text-purple-500" />
+      case 'settlement_added': return <Handshake className="h-4 w-4 text-emerald-500" />
       default: return <Clock className="h-4 w-4 text-zinc-500" />
     }
   }
@@ -157,6 +159,12 @@ export function ActivityFeed({ groupId, currentUserId }: ActivityFeedProps) {
       case 'expense_deleted': return <>{actor} removed expense "{expenseTitle}"</>
       case 'member_added': return <>{actor} added a new member</>
       case 'member_removed': return <>{actor} removed a member</>
+      case 'settlement_added': {
+        const amount = log.metadata?.amount
+        const targetId = log.metadata?.paid_to
+        const targetName = targetId === currentUserId ? 'You' : 'someone'
+        return <>{actor} paid <strong>₹{amount}</strong> to {targetName}</>
+      }
       default: return `${actor} performed an action`
     }
   }

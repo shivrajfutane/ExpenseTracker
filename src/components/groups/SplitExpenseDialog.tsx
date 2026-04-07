@@ -140,18 +140,22 @@ export function SplitExpenseDialog({ groupId, members, expense, open: externalOp
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      const beforeState = isEditing ? { title: expense.title, amount: expense.total_amount, splits: expense.splits } : null
+      const beforeState = isEditing ? { 
+        title: expense.title, 
+        amount: expense.total_amount, 
+        splits: expense.splits 
+      } : null
       let expenseId = expense?.id
 
       // 1. Handle the master split_expense record
       if (isEditing) {
-        const { error } = await supabase
+        const { error: updateError } = await supabase
           .from('split_expenses')
           .update({ title: title.trim(), total_amount: totalAmount })
           .eq('id', expenseId)
-        if (error) throw error
+        if (updateError) throw updateError
       } else {
-        const { data, error } = await supabase
+        const { data, error: insertError } = await supabase
           .from('split_expenses')
           .insert([{ 
               group_id: groupId, 
@@ -161,20 +165,25 @@ export function SplitExpenseDialog({ groupId, members, expense, open: externalOp
               created_by: user.id
           }])
           .select().single()
-        if (error) throw error
+        if (insertError) throw insertError
         expenseId = data.id
       }
 
       // 2. Clear old splits if editing
       if (isEditing) {
-        await supabase.from('expense_splits').delete().eq('split_expense_id', expenseId)
+        const { error: deleteError } = await supabase
+          .from('expense_splits')
+          .delete()
+          .eq('split_expense_id', expenseId)
+        
+        if (deleteError) throw deleteError
       }
 
-      // 3. Upsert new splits
+      // 3. Upsert new splits (Rounded to 2 decimals for DB compatibility)
       const splitsToInsert = Object.entries(splitResults).map(([userId, owed]) => ({
           split_expense_id: expenseId,
           user_id: userId,
-          owed_amount: owed
+          owed_amount: parseFloat(owed.toFixed(2))
       }))
 
       const { error: splitError } = await supabase
@@ -183,22 +192,33 @@ export function SplitExpenseDialog({ groupId, members, expense, open: externalOp
 
       if (splitError) throw splitError
 
-      // 4. Log Activity
-      await logActivity({
-          userId: user.id,
-          action: isEditing ? 'expense_edited' : 'expense_created',
-          groupId,
-          expenseId,
-          metadata: {
-              before: beforeState,
-              after: { title: title.trim(), amount: totalAmount, splits: splitResults }
-          }
-      })
+      // 4. Log Activity (Wrapped in try-catch to not block success toast if logging fails)
+      try {
+        await logActivity({
+            userId: user.id,
+            action: isEditing ? 'expense_edited' : 'expense_created',
+            groupId,
+            expenseId,
+            metadata: {
+                before: beforeState,
+                after: { 
+                  title: title.trim(), 
+                  amount: totalAmount, 
+                  splits: Object.fromEntries(
+                    Object.entries(splitResults).map(([k, v]) => [k, parseFloat(v.toFixed(2))])
+                  ) 
+                }
+            }
+        })
+      } catch (logErr) {
+        console.warn('Activity logging failed but expense saved:', logErr)
+      }
 
       toast.success(isEditing ? 'Expense updated!' : 'Expense split and saved!')
       setOpen(false)
       router.refresh()
     } catch (error: any) {
+      console.error('Submission Error:', error)
       toast.error(error.message || 'Failed to process expense')
     } finally {
       setLoading(false)

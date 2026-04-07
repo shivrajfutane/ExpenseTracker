@@ -77,28 +77,54 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
     
     if (settlementsError && settlementsError.code !== 'PGRST116') throw settlementsError
     
-    // 4. Calculate Group Balances
+    // 4. Calculate Group Balances (Total and Per-Member)
     let youPaidTotal = 0
     let yourShareTotal = 0
+    const memberBalances: Record<string, number> = {}
+
+    // Initialize member balances
+    members?.forEach((m: any) => {
+        if (m.user_id !== user.id) memberBalances[m.user_id] = 0
+    })
 
     splitExpenses?.forEach((expense: any) => {
-        if (expense.paid_by === user.id) {
-        youPaidTotal += Number(expense.total_amount)
-        }
+        const payerId = expense.paid_by
         
-        const yourSplit = expense.splits?.find((s: any) => s.user_id === user.id)
-        if (yourSplit) {
-        yourShareTotal += Number(yourSplit.owed_amount)
+        if (payerId === user.id) {
+            youPaidTotal += Number(expense.total_amount)
+            // Others owe you
+            expense.splits?.forEach((split: any) => {
+                if (split.user_id !== user.id && memberBalances[split.user_id] !== undefined) {
+                    memberBalances[split.user_id] += Number(split.owed_amount)
+                }
+            })
+        } else {
+            // You might owe the payer
+            const yourSplit = expense.splits?.find((s: any) => s.user_id === user.id)
+            if (yourSplit) {
+                yourShareTotal += Number(yourSplit.owed_amount)
+                if (memberBalances[payerId] !== undefined) {
+                    memberBalances[payerId] -= Number(yourSplit.owed_amount)
+                }
+            }
         }
     })
 
     // 4b. Settlement logic
     settlements?.forEach((settlement: any) => {
-        if (settlement.paid_by === user.id) {
-        youPaidTotal += Number(settlement.amount)
-        }
-        if (settlement.paid_to === user.id) {
-        yourShareTotal += Number(settlement.amount)
+        const { paid_by, paid_to, amount } = settlement
+        const amt = Number(amount)
+
+        if (paid_by === user.id) {
+            youPaidTotal += amt
+            if (memberBalances[paid_to] !== undefined) {
+                memberBalances[paid_to] += amt
+            }
+        } else if (paid_to === user.id) {
+            yourShareTotal += amt
+            if (memberBalances[paid_by] !== undefined) {
+                memberBalances[paid_by] -= amt
+            }
         }
     })
 
@@ -133,7 +159,13 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
             )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-            <SettleUpDialog groupId={id} currentUserId={user.id} members={members || []} />
+            <SettleUpDialog 
+                groupId={id} 
+                currentUserId={user.id} 
+                members={members || []} 
+                balances={memberBalances}
+                currency={currency}
+            />
             <InviteMembersDialog groupId={id} />
             <SplitExpenseDialog groupId={id} members={members || []} />
             </div>

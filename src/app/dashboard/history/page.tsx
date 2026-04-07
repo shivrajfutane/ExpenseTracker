@@ -16,9 +16,11 @@ import {
     Search, 
     Filter, 
     ArrowUpDown, 
-    X
+    X,
+    Download
 } from 'lucide-react'
 import Link from 'next/link'
+import { HistoryCSVExportButton } from '@/components/history/HistoryCSVExportButton'
 
 interface HistoryPageProps {
   searchParams: Promise<{
@@ -54,12 +56,6 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
     .select('*')
     .eq('user_id', userId)
 
-  // Build query for expenses
-  let baseQuery = supabase
-    .from('expenses')
-    .select('*, category:categories(*)', { count: 'exact' })
-    .eq('user_id', userId)
-
   const { data: profile } = await supabase
     .from('profiles')
     .select('currency')
@@ -68,31 +64,46 @@ export default async function HistoryPage({ searchParams }: HistoryPageProps) {
 
   const currency = profile?.currency || '$'
 
-  if (categoryFilter !== 'all') {
-    baseQuery = baseQuery.eq('category_id', categoryFilter)
+  // 3. Build filtered queries
+  const buildFilteredQuery = () => {
+    let q = supabase
+      .from('expenses')
+      .select('*, category:categories(*)', { count: 'exact' })
+      .eq('user_id', userId)
+
+    if (categoryFilter !== 'all') {
+      q = q.eq('category_id', categoryFilter)
+    }
+
+    if (query) {
+      q = q.ilike('title', `%${query}%`)
+    }
+
+    return q.order(sortField || 'date', { ascending: sortOrder === 'asc' })
   }
 
-  if (query) {
-    baseQuery = baseQuery.ilike('title', `%${query}%`)
-  }
-
-  // Handle sorting
-  baseQuery = baseQuery.order(sortField || 'date', { ascending: sortOrder === 'asc' })
-
-  // Handle pagination
-  const { data: expenses, count } = await baseQuery.range(offset, offset + limit - 1)
+  // Execute query for all matching expenses (for export) - Using a fresh builder
+  const { data: allExpenses } = await buildFilteredQuery()
+  
+  // Handle pagination - Using another fresh builder with range
+  const { data: expenses, count } = await buildFilteredQuery().range(offset, offset + limit - 1)
 
   const totalPages = count ? Math.ceil(count / limit) : 1
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-100">
-          Expense History
-        </h1>
-        <p className="text-zinc-500 dark:text-zinc-400">
-          Review and manage all your past transactions.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-100">
+            Expense History
+            </h1>
+            <p className="text-zinc-500 dark:text-zinc-400">
+            Review and manage all your past transactions.
+            </p>
+        </div>
+        <div className="flex items-center gap-2">
+            <HistoryCSVExportButton expenses={allExpenses || []} />
+        </div>
       </div>
 
       <Card className="border-none shadow-sm dark:bg-zinc-900/40 backdrop-blur-md">
