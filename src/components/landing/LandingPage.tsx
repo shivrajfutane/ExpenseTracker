@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/layout/ThemeToggle'
@@ -15,15 +15,7 @@ import {
   LayoutDashboard 
 } from 'lucide-react'
 import Link from 'next/link'
-import { useRef } from 'react'
-
 export function LandingPage({ session }: { session: any }) {
-  const targetRef = useRef(null)
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start start", "end end"]
-  })
-
   // Entrance animations for sections
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
