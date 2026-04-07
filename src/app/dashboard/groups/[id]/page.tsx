@@ -16,15 +16,15 @@ import { format } from 'date-fns'
 export const dynamic = 'force-dynamic'
 
 export default async function GroupDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login')
-  }
-
   try {
+    const { id } = await params
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login')
+    }
+
     // 1. Fetch Group details
     const { data: group, error: groupError } = await supabase
         .from('groups')
@@ -243,6 +243,11 @@ export default async function GroupDetailPage({ params }: { params: Promise<{ id
         </div>
     )
   } catch (error: any) {
+    // RE-THROW internal Next.js errors (redirect, notFound)
+    if (error?.digest?.startsWith('NEXT_REDIRECT') || error?.digest?.startsWith('NEXT_NOT_FOUND') || error.message === 'NEXT_REDIRECT' || error.message === 'NEXT_NOT_FOUND') {
+        throw error;
+    }
+    
     console.error('Group Detail Error:', error)
     return (
         <div className="p-8 max-w-2xl mx-auto">
